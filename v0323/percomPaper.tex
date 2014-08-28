@@ -1,0 +1,397 @@
+%\title{SlugCam submission for PerCom 2015}
+%% percomPaper.tex
+%% Draft version: 1.0
+%% 8/25/2014
+%% Authors:
+%% Kevin Abas
+%% Leland Miller
+%% Katia Obraczka
+%% see SlugCam's Organization page: https://github.com/SlugCam
+
+
+
+%%*************************************************************************
+%% Legal Notice:
+%% This code is offered as-is without any warranty either expressed or
+%% implied; without even the implied warranty of MERCHANTABILITY or
+%% FITNESS FOR A PARTICULAR PURPOSE! 
+%% User assumes all risk.
+%% In no event shall IEEE or any contributor to this code be liable for
+%% any damages or losses, including, but not limited to, incidental,
+%% consequential, or any other damages, resulting from the use or misuse
+%% of any information contained here.
+%%
+%% All comments are the opinions of their respective authors and are not
+%% necessarily endorsed by the IEEE.
+%%
+%% This work is distributed under the LaTeX Project Public License (LPPL)
+%% ( http://www.latex-project.org/ ) version 1.3, and may be freely used,
+%% distributed and modified. A copy of the LPPL, version 1.3, is included
+%% in the base LaTeX documentation of all distributions of LaTeX released
+%% 2003/12/01 or later.
+%% Retain all contribution notices and credits.
+%% ** Modified files should be clearly indicated as such, including  **
+%% ** renaming them and changing author support contact information. **
+%%
+%% File list of work: IEEEtran.cls, IEEEtran_HOWTO.pdf, bare_adv.tex,
+%%                    bare_conf.tex, bare_jrnl.tex, bare_jrnl_compsoc.tex,
+%%                    bare_jrnl_transmag.tex
+%%*************************************************************************
+
+
+%
+\documentclass[journal,transmag]{IEEEtran}
+%
+
+
+
+% Some very useful LaTeX packages include:
+% (uncomment the ones you want to load)
+
+
+% *** MISC UTILITY PACKAGES ***
+%
+%\usepackage{ifpdf}
+%
+% \ifpdf
+%   % pdf code
+% \else
+%   % dvi code
+% \fi
+
+
+% *** CITATION PACKAGES ***
+%
+%\usepackage{cite}
+
+
+% *** GRAPHICS RELATED PACKAGES ***
+%
+\ifCLASSINFOpdf
+  % \usepackage[pdftex]{graphicx}
+  % declare the path(s) where your graphic files are
+  % \graphicspath{{../pdf/}{../jpeg/}}
+  % and their extensions so you won't have to specify these with
+  % every instance of \includegraphics
+  % \DeclareGraphicsExtensions{.pdf,.jpeg,.png}
+\else
+  % or other class option (dvipsone, dvipdf, if not using dvips). graphicx
+  % will default to the driver specified in the system graphics.cfg if no
+  % driver is specified.
+  % \usepackage[dvips]{graphicx}
+  % declare the path(s) where your graphic files are
+  % \graphicspath{{../eps/}}
+  % and their extensions so you won't have to specify these with
+  % every instance of \includegraphics
+  % \DeclareGraphicsExtensions{.eps}
+\fi
+
+
+% *** MATH PACKAGES ***
+%
+%\usepackage[cmex10]{amsmath}
+
+
+% *** SPECIALIZED LIST PACKAGES ***
+%
+%\usepackage{algorithmic}
+
+
+% *** ALIGNMENT PACKAGES ***
+%
+%\usepackage{array}
+
+
+% *** SUBFIGURE PACKAGES ***
+%\ifCLASSOPTIONcompsoc
+%  \usepackage[caption=false,font=normalsize,labelfont=sf,textfont=sf]{subfig}
+%\else
+%  \usepackage[caption=false,font=footnotesize]{subfig}
+%\fi
+
+
+% *** FLOAT PACKAGES ***
+%
+%\usepackage{fixltx2e}
+%
+%\usepackage{stfloats}
+%
+%\usepackage{dblfloatfix}
+%
+%\ifCLASSOPTIONcaptionsoff
+%  \usepackage[nomarkers]{endfloat}
+% \let\MYoriglatexcaption\caption
+% \renewcommand{\caption}[2][\relax]{\MYoriglatexcaption[#2]{#2}}
+%\fi
+%
+% For subfig.sty:
+% \let\MYorigsubfloat\subfloat
+% \renewcommand{\subfloat}[2][\relax]{\MYorigsubfloat[]{#2}}
+%
+
+
+% *** PDF, URL AND HYPERLINK PACKAGES ***
+%
+%\usepackage{url}
+
+
+\begin{document}
+
+
+%% ***********************  THE TITLE **********************************
+
+
+
+\title{Solar Smart Camera Networks for Ubiquitous Outdoor Video Monitoring}
+
+
+
+%% ***********************  AUTHORS ************************************
+
+
+
+\author{\IEEEauthorblockN{Kevin Abas\IEEEauthorrefmark{1},
+Leland Miller \IEEEauthorrefmark{1},
+Katia Obraczka\IEEEauthorrefmark{1}}
+\IEEEauthorblockA{\IEEEauthorrefmark{1}School of Engineering,
+University of California Santa Cruz, CA 95064 USA}
+}
+
+
+
+%% ***********************  Abstract ************************************
+
+
+
+\IEEEtitleabstractindextext{%
+\begin{abstract}
+
+Abstract: Blah Blah Solar camera, our contributions are, etc. \cite{DSPcam}
+
+\end{abstract}
+
+
+
+%% ********************** IEEE KEYWORDS ********************************
+
+
+
+\begin{IEEEkeywords}
+Real-time systems and embedded
+systems,Interactive systems, Web services, Computer vision, Human safety
+\end{IEEEkeywords}}
+
+% make the title area
+\maketitle
+
+\IEEEdisplaynontitleabstractindextext
+% \IEEEdisplaynontitleabstractindextext has no effect when using
+% compsoc or transmag under a non-conference mode.
+
+% For peerreview papers, this IEEEtran command inserts a page break and
+% creates the second title. It will be ignored for other modes.
+\IEEEpeerreviewmaketitle
+
+
+
+%%
+%% *********************  BEGIN PAPER **********************************
+%%
+
+
+
+\section{Introduction}
+
+
+ \IEEEPARstart{I}{}ntroduction here discussing the paper
+ Bring up both areas we'll be discussing
+
+
+
+%%
+%% *********************  Section 2 **********************************
+%%
+
+
+
+\section{Motivation}
+
+Explain campus safety application possibly? Potential use cases
+
+
+
+
+%%
+%% *********************  Section 3 **********************************
+%%
+
+
+
+\section{Overview of SlugCam}
+
+	\subsection{Design choices}
+
+		\subsubsection{Power awareness}
+
+		\subsubsection{Application requirements}
+
+		\subsubsection{Functionality}
+
+	\subsection{System overview}
+
+
+
+%%
+%% *********************  Section 4 **********************************
+%%
+
+
+
+\section{Hardware system}
+
+	\subsection{Organization}
+    
+	\subsection{Subsystems}
+    
+    \subsection{Explain why components were chosen}
+    
+    \subsection{solar/battery}
+
+
+
+%%
+%% *********************  Section 5 **********************************
+%%
+
+
+
+\section{Software system}
+
+	\subsection{Node Operating system}
+    
+    	\subsubsection{Embedded design}
+        
+        \subsubsection{Power awareness}
+        
+	\subsection{Web Server Stack}
+    	
+       \subsubsection{MEAN stacks}
+    
+    \subsection{User interface}
+    
+        \subsubsection{Description of video file management system}
+        
+        
+
+%%
+%% *********************  Section 6 **********************************
+%%
+
+
+
+\section{System operation}
+	
+    \subsection{Duty Cycles}
+
+
+
+%%
+%% *********************  Section 7 **********************************
+%%
+ 
+ 
+ 
+\section{Deployment} 
+	\subsection{ Outdoor power characterization and testing}
+    	\subsubsection{experiments in lab with current sensor/multimeter analyzing the systems current consumption}
+		
+        \subsubsection{application use cases, both solar/battery performance tests and computer vision tests.}
+        
+		\subsubsection{solar/battery after}
+        
+    \subsection{ UI application testing}
+    
+    
+    
+%%
+%% *********************  Section 8 **********************************
+%%    
+
+
+
+\section{Background and related work}
+
+
+
+%%
+%% *********************  Section 9 **********************************
+%% 
+
+
+
+\section{future work and conclusion}
+
+
+
+%% *************************  END PAPER **********************************
+
+
+
+% use section* for acknowledgements
+\section*{Acknowledgment}
+
+
+The authors would like to thank...
+
+
+% Can use something like this to put references on a page
+% by themselves when using endfloat and the captionsoff option.
+\ifCLASSOPTIONcaptionsoff
+  \newpage
+\fi
+
+
+
+%% ******************  REFERENCE SECTION **********************************
+
+
+
+\bibliography{Bib.bib}{}
+\bibliographystyle{unsrt}
+
+
+
+%% ******************  AUTHOR BIOGRAPHIES *********************************
+
+
+
+
+\begin{IEEEbiographynophoto}{Kevin Abas}
+Biography text here.
+\end{IEEEbiographynophoto}
+
+\begin{IEEEbiographynophoto}{Leland Miller}
+Biography text here.
+\end{IEEEbiographynophoto}
+
+\begin{IEEEbiographynophoto}{Katia Obraczka}
+Biography text here.
+\end{IEEEbiographynophoto}
+
+% You can push biographies down or up by placing
+% a \vfill before or after them. The appropriate
+% use of \vfill depends on what kind of text is
+% on the last page and whether or not the columns
+% are being equalized.
+
+%\vfill
+
+% Can be used to pull up biographies so that the bottom of the last one
+% is flush with the other column.
+%\enlargethispage{-5in}
+
+
+
+
+\end{document}
+
