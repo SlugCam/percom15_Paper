@@ -1,64 +1,3 @@
-\section{SlugCam System Background}
-
-One of the main concepts around our system is that, unlike a traditional camera
-network that constantly records video and transmits it to a central server, or
-even simple cameras with only motion detectors, our camera network is able to
-analyze video on the camera itself and make decisions regarding when and what to
-record or transmit based on its determined importance, node state (such as the
-amount of power remaining on the battery or the remaining amount of
-storage on the camera node), or environmental variables determined from sensor
-data (such as temperature, humidity, and other data of interest).
-
-It is also important to understand the latency inherent in our system. High
-priority video can be immediately transmitted, but cameras have the ability to
-store low priority video until conditions change. Communication to a camera
-node must also wait until that node decides to come alive, either due to
-external events or periodic wakeups.
-
-Our camera nodes themselves are built using as many off the shelf parts as
-possible in order to allow future users to reconstruct our system as easily as
-possible. We decided on the Raspberry Pi\cite{raspi_home} as a base for our
-project due to its low cost, availability, and the balance of power and energy
-use it provides. In order to optimize the power use even further, the Raspberry
-Pi itself is motion activated. An MSP430 monitors a passive infrared sensor and
-turns on the Raspberry Pi when motion is detected. The camera node software is
-set to start when the Raspberry Pi is powered up. The camera node specific
-software runs on a customized Linux distribution installed on the camera nodes
-to minimize start up time and power consumption. This camera node specific
-software begins communication with the network software where data collected
-from the cameras is collected, stored, and presented to end user applications.
-
-Currently our network relies on an existing 802.11g wireless network
-infrastructure. This means in areas where a 802.11g network is available the
-cameras are freely deployable. Though this restriction can be mitigated using
-directional antennas, we understand that this is a major limitation. One of our
-future areas of research will be allowing for the use of ad-hoc wireless
-networks. The wireless networking hardware we are using already allows for this
-feature and we will test the implementation of this feature and its power usage
-in the future. We have also tried to keep the system architecture generic enough
-that the system will work over different types of communication networks. We
-hope that the general goal to minimize video footage recorded and to prioritize
-communication of data will have application over any limited bandwidth network,
-such as cellular networks and satellite data connections.
-
-SlugCam is not the first project to attempt to accomplish many of these goals.
-CITRIC\cite{CITRIC} is a similar smart camera project with a focus on running
-computer vision algorithms on camera nodes and communicating over wireless and
-other low-bandwidth networks, but without the focus on implementing a solar
-energy source that the SlugCam project does.  The CITRIC paper also outlines
-several other similar projects and has comparisons of them to their system.
-
-FireWxNet\cite{FireWxNet} presents a solar-powered wireless sensor and visual
-surveillance network designed for very remote deployment in the monitoring of
-wildfires. It shares some design goals with our project but does not share the
-focus on computer vision and automatic analysis of video data.
-
-The authors of \cite{10.1109/DSD.2008.23} present a system that shares many of
-the design goals of our project, including the desire to utilize alternative
-power sources, wireless communication, and computer vision to create as
-autonomous a camera node as possible.
-
-
 %-- Body sections - 1-3 sections with titles relevant to your work. This should
 %discuss the details of your contribution. This may be a new algorithm, a new
 %design, or whatever you actually did. It can be 1 large section with
@@ -71,6 +10,10 @@ software that runs on the cameras themselves, the network software supporting
 the system, and client applications that present collected data to the end
 users. The focus of this paper is the network software and the client
 application that we designed.
+
+\section{Node Software Design}
+
+
 
 \section{Network Software Design}
 
@@ -135,18 +78,18 @@ this will be implemented at the data layer instead of existing across modules.
 \subsubsection{Opportunistic Network Design}
 
 Since various factors could inhibit communication to and from the camera nodes,
-we are required to design a server system that works in a delay-tolerant manner.
-To deal with these issues, we built all communication protocols in an
-opportunistic way. The video and message servers constantly wait for incoming
-connections from camera nodes and expect that those connections could be dropped
-at any time. Any messages that need to be sent to the camera must wait until
-that camera comes online, and as soon as the camera does come online we begin to
-send it. This style of network further increases camera autonomy at the cost
-immediate communication ability. It allows for many interesting optimizations,
-such as reducing communication in low power situations and when only
-non-interesting data has been collected. Cameras can also be set to come alive
-on a timer to receive important control data from the network if needed to help
-manage the communication latency inherent with this type of design.
+we are required to design a type of delay-tolerant network.  To deal with these
+issues, we built all communication protocols in an opportunistic way. The video
+and message servers constantly wait for incoming connections from camera nodes
+and expect that those connections could be dropped at any time. Any messages
+that need to be sent to the camera must wait until that camera comes online, and
+as soon as the camera does come online we begin to send it. This style of
+network further increases camera autonomy at the cost immediate communication
+ability. It allows for many interesting optimizations, such as reducing
+communication in low power situations and when only non-interesting data has
+been collected. Cameras can also be set to come alive on a timer to receive
+important control data from the network if needed to help manage the
+communication latency inherent with this type of design.
 
 \subsubsection{Network Transparency}
 
@@ -160,6 +103,34 @@ handle new data types as it does native SlugCam data types. Eventually our video
 data collection system could be abstracted to generic binary data collection
 which would allow further opportunities to future developers on our platform
 without modifying the network itself.
+
+\subsubsection{Implementation}
+
+% TODO a lot of opinion
+% TODO check 
+In our implementation of the network software we decided to use the Node.js
+JavaScript framework. We went with this choice for several reasons. Node.js
+offers many built in tools for writing network software while remaining more
+lightweight than many alternatives. Facilities for creating TCP and HTTP
+servers, network security, and many other essentials exist in the standard
+Node.js libraries. Using these facilities does not require much boilerplate code
+and is more succinct, and we believe more approachable, than in some
+alternatives. The developer community around Node.js is active and we were able
+to find packages for many useful development and network related tasks. In our
+experience many of the packages we found focused on solving a specific task
+which allowed us to bring in well-tested packages without adding a large amount
+of unnecessary code to the project.
+
+One of the drawbacks of JavaScript is that the dynamic type system removes the
+possibility of static type checking. This introduces a class of errors that can
+be detected by a compiler or other tools in statically typed languages such as C
+or Java. To help avoid many of the errors associated with the dynamic nature of
+JavaScript we use linting tools, such as JSHint, to warn us of common errors and
+patterns that frequently lead to error. We also use thorough documentation to
+aid in preventing many of these types of errors, and we are attempting to clearly
+define all interfaces and functions in documentation.  We are also planning on
+using prolific unit testing to ensure the reliability of or network code base in
+addition to end-to-end testing over the entire system.
 
 \subsection{Data Layer}
 
@@ -191,10 +162,21 @@ data in a message. This goes along with the transparent network concept. It
 means that for a new data type to be introduced into the system modifications
 only need to be made to the camera node software and the client.
 
+%TODO check
 We decided to implement the textual data storage using an existing database
 system to take advantage of optimizations already made for storing this kind of
 structured data. The database system is further discussed in the methodology
 section.
+
+In our current implementation of the system we chose MongoDB\cite{mongo_home}
+for textual data storage. MongoDB offers several advantages in our situation.
+First of all, MongoDB stores records as documents, which are very similar to
+JSON objects.  This closely matches our desire to store our messages in a
+flexible way and the use of JSON as a communication format. Since MongoDB is
+designed around this style of data storage, and offers tools to easily and
+efficiently query data stored in this manner, it is a choice that has allowed us
+good performance and rapid development time. It makes it very easy to implement
+the flexibility we desire in our message format.
 
 \subsubsection{Video Data}
 
@@ -209,7 +191,7 @@ database system.
 
 %TODO weak
 Since all metadata pertaining to a videos is textual data, it is stored in the
-message system. This means that there is a set of data in the textual data
+database. This means that there is a set of data in the textual data
 storage system containing all the metadata for a video. This set will contain a
 video ID, which along with the camera name can be used to recall the required
 video data from the file system. This means that we are able to retain the
@@ -261,7 +243,12 @@ unsigned 32bit integers, then sends the video data itself.  The camera can then
 repeatedly send IDs, byte lengths, and video data for as many videos as it
 likes. This is shown in table~\ref{video_protocol}.
 
-
+It should also be noted that the video ID is a Unix timestamp and the duration
+of the video is calculated on the receiving server in order to find the video
+start and end times.  This reduces the amount of record keeping necessary on the
+node, but more importantly it provides us with a simple way to track start and
+end times for videos even if the node is unexpectedly powered off during video
+recording.
 
 \begin{table}[!t]
 % increase table row spacing, adjust to taste
@@ -367,47 +354,7 @@ camera location is automatically adjusted (manual configuration is also
 available). We will have to continue to analyze whether it is worthwhile to
 support both desktop and mobile clients in our application.
 
-
-%-- Methodology - Your results will have some experiments or a demonstration.
-%What tools did you use to create your software, simulator, or parts did you use
-%to create your prototype?
-\section{Methodology}
-
-% TODO a lot of opinion
-In our implementation of the network software we decided to use the Node.js
-JavaScript framework. We went with this choice for several reasons. Node.js
-offers many built in tools for writing network software while remaining more
-lightweight than many alternatives. Facilities for creating TCP and HTTP
-servers, network security, and many other essentials exist in the standard
-Node.js libraries. Using these facilities does not require much boilerplate code
-and is more succinct, and we believe more approachable, than in some
-alternatives. The developer community around Node.js is active and we were able
-to find packages for many useful development and network related tasks. In our
-experience many of the packages we found focused on solving a specific task
-which allowed us to bring in well-tested packages without adding a large amount
-of unnecessary code to the project.
-
-One of the drawbacks of JavaScript is that the dynamic type system removes the
-possibility of static type checking. This introduces a class of errors that can
-be detected by a compiler or other tools in statically typed languages such as C
-or Java. To help avoid many of the errors associated with the dynamic nature of
-JavaScript we use linting tools, such as JSHint, to warn us of common errors and
-patterns that frequently lead to error. We also use thorough documentation to
-aid in preventing many of these types of errors, and we are attempting to clearly
-define all interfaces and functions in documentation.  We are also planning on
-using prolific unit testing to ensure the reliability of or network code base in
-addition to end-to-end testing over the entire system.
-
-In our current implementation of the system we chose MongoDB\cite{mongo_home}
-for textual data storage. MongoDB offers several advantages in our situation.
-First of all, MongoDB stores records as documents, which are very similar to
-JSON objects.  This closely matches our desire to store our messages in a
-flexible way and the use of JSON as a communication format. Since MongoDB is
-designed around this style of data storage, and offers tools to easily and
-efficiently query data stored in this manner, it is a choice that has allowed us
-good performance and rapid development time. It makes it very easy to implement
-the flexibility we desire in our message format.
-
+% Implementation %TODO check heading?
 For the client application we decided to use AngularJS\cite{angular_home} as our
 main framework. AngularJS is a JavaScript framework developed by Google. It aids
 in the creation of single-page client based web applications and allows us to
@@ -417,29 +364,4 @@ easier for us to experiment with different interface ideas rapidly. AngularJS is
 well documented and supported by Google, and has an active community of users
 outside of Google. Using the AngularJS framework has helped us create efficient,
 modular code that is easy to maintain.
-
-%-- Results - The measurements of results including tables, pictures, or other
-%information.
-\section{Results}
-
-Using the design we above we were able to successfully upload videos and
-messages using camera simulation software. An actual deployment test is pending
-the completion of the camera nodes. The camera simulation software is able to
-generate messages and send generated video into the network that can then be
-viewed in the client application. This simulation software is a very useful tool
-not only in the development of our network software, but also in its testing.
-
-We were also able to complete a basic client application and will continue to
-add in features along with the development of the system as a whole. Our client
-application currently supports the mapping features discussed above and the
-ability to view collected messages and video. Screenshots of the current client
-application are shown in figure~\ref{fig_screens}.
-
-
-\begin{figure}[!t]
-\centering
-\includegraphics[width=3in]{screenshots}
-\caption{Screenshots of the SlugCam Client Mapping and Video Capability}
-\label{fig_screens}
-\end{figure}
 
