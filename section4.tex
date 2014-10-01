@@ -7,7 +7,99 @@ the system, and client applications that present collected data to the end
 users. The focus of this paper is the network software and the client
 application that we designed.
 
-\subsection{Node Software Design}
+% Architecture Diagram
+% TODO should caption be centered?
+\begin{figure}[!t]
+\centering
+\includegraphics[width=2.5in]{software_organization}
+\caption{High-Level Architecture of the SlugCam Software System}
+\label{fig_netoverview}
+\end{figure}
+
+% Architecture Diagram
+% TODO fix me
+\begin{figure}[!t]
+\centering
+\includegraphics[width=2.5in]{software_organization}
+\caption{Data Flow Through the Network Software}
+\label{fig_netoverview}
+\end{figure}
+
+We chose to break apart network functionality into several main areas as shown
+in figure~\ref{fig_netoverview}. The message server is the main server
+responsible for communicating all textual data between the network and the
+cameras and the video server receives the video data from the cameras. The API
+server offers an HTTP interface to the network for end-user applications. All of
+these modules interact independently and communicate through the data storage
+layer. Figure~\ref{fig_networkflow} shows an example of data flow through the
+network system in the case of a video capture event.
+
+% Design goals
+
+One of the major goals for the network software design was to create a
+network that is easily extensible by researchers who may not have much
+experience working with network software. Our design decisions reflect this
+desire along with the need to work with the restrictions of our hardware and
+network choices.
+
+%\subsubsection{Modular Design}
+
+We decided early on that designing our network software in a modular way would
+afford us several benefits including ease of extensibility, ease of deployment,
+and the testability of our system. By clearly defining functional units and
+retaining a separation of duties between separate units of code we help ease the
+development process. Not only can development on separate modules occur in
+parallel, but developers can also work on a module without needing knowledge of
+how other modules are coded. This aspect becomes more important in our desire to
+create a system that is easily extensible by future researchers who may not have
+the time or desire to fully understand our code, but would like to add modules
+for their unique needs.
+
+One of the disadvantages of this design is that to maintain true separation of
+modules we lose the ability for modules to directly communicate.  Though for
+many applications this is not important, it does make it difficult for client
+applications to provide notification of updates without polling the data layer.
+Since we are not running into issues with this it is not something that we are
+looking to optimize currently, although several solutions are possible. One
+would to be allowing the data layer to send notifications to the API server.  In
+the current implementation this would mean that the servers would have to run in
+the same process. This requirement could be removed by creating a notification
+server that could broadcast updates to modules over a network connection. The
+ability to send email notifications or text messages is not as problematic, as
+this will be implemented at the data layer instead of existing across modules.
+
+% Insert Workflow diagram
+
+% \subsubsection{Opportunistic Network Design}
+
+Since various factors could inhibit communication to and from the camera nodes,
+we are required to design a type of delay-tolerant network.  To deal with these
+issues, we built all communication protocols in an opportunistic way. The video
+and message servers constantly wait for incoming connections from camera nodes
+and expect that those connections could be dropped at any time. Any messages
+that need to be sent to the camera must wait until that camera comes online, and
+as soon as the camera does come online we begin to send it. This style of
+network further increases camera autonomy at the cost immediate communication
+ability. It allows for many interesting optimizations, such as reducing
+communication in low power situations and when only non-interesting data has
+been collected. Cameras can also be set to come alive on a timer to receive
+important control data from the network if needed to help manage the
+communication latency inherent with this type of design.
+
+% \subsubsection{Network Transparency}
+
+One of our goals is to make it easy for researchers to augment the camera nodes
+with additional sensors without needing to modify the core network software. We
+would like these developers to not have to worry about the network software, and
+to have the opportunity to focus on their data collection and analysis systems.
+To implement a new mode of data collection, a developer only needs to establish
+a connection to the message server and send data. The network will recognize and
+handle new data types as it does native SlugCam data types. Eventually our video
+data collection system could be abstracted to generic binary data collection
+which would allow further opportunities to future developers on our platform
+without modifying the network itself.
+
+\subsection{SlugCam Node Software}
 
 One of the main benefits of running an embedded Linux distributions on our
 camera nodes any developer who has a moderate understanding of programming in C
@@ -54,100 +146,7 @@ interesting features such as immediately sending video with action in preset
 areas, allowing video recording on a timer, and taking still shots instead of
 video when battery levels are low.
 
-\subsection{Network Software Design}
-
-One of the major goals for the network software design was to create a
-network that is easily extensible by researchers who may not have much
-experience working with network software. Our design decisions reflect this
-desire along with the need to work with the restrictions of our hardware and
-network choices.
-
-\subsubsection{Modular Design}
-
-We decided early on that designing our network software in a modular way would
-afford us several benefits including ease of extensibility, ease of deployment,
-and the testability of our system.
-
-By clearly defining functional units and retaining a separation of duties
-between separate units of code we help ease the development process. Not only
-can development on separate modules occur in parallel, but developers can also
-work on a module without needing knowledge of how other modules are coded. This
-aspect becomes more important in our desire to create a system that is easily
-extensible by future researchers who may not have the time or desire to fully
-understand our code, but would like to add modules for their unique needs.
-
-% Architecture Diagram
-% TODO should caption be centered?
-\begin{figure}[!t]
-\centering
-\includegraphics[width=2.5in]{software_organization}
-\caption{High-Level Architecture of the SlugCam Software System}
-\label{fig_netoverview}
-\end{figure}
-
-We chose to break apart network functionality into several main areas as shown
-in figure~\ref{fig_netoverview}. The message server is the main server
-responsible for communicating all textual data between the network and the
-cameras and the video server receives the video data from the cameras. The API
-server offers an HTTP interface to the network for end-user applications. All of
-these modules interact independently and communicate through the data storage
-layer. Figure~\ref{fig_networkflow} shows an example of data flow through the
-network system in the case of a video capture event.
-
-% Architecture Diagram
-% TODO fix me
-\begin{figure}[!t]
-\centering
-\includegraphics[width=2.5in]{software_organization}
-\caption{Data Flow Through the Network Software}
-\label{fig_netoverview}
-\end{figure}
-
-One of the disadvantages of this design is that to maintain true separation of
-modules we lose the ability for modules to directly communicate.  Though for
-many applications this is not important, it does make it difficult for client
-applications to provide notification of updates without polling the data layer.
-Since we are not running into issues with this it is not something that we are
-looking to optimize currently, although several solutions are possible. One
-would to be allowing the data layer to send notifications to the API server.  In
-the current implementation this would mean that the servers would have to run in
-the same process. This requirement could be removed by creating a notification
-server that could broadcast updates to modules over a network connection. The
-ability to send email notifications or text messages is not as problematic, as
-this will be implemented at the data layer instead of existing across modules.
-
-% Insert Workflow diagram
-
-\subsubsection{Opportunistic Network Design}
-
-Since various factors could inhibit communication to and from the camera nodes,
-we are required to design a type of delay-tolerant network.  To deal with these
-issues, we built all communication protocols in an opportunistic way. The video
-and message servers constantly wait for incoming connections from camera nodes
-and expect that those connections could be dropped at any time. Any messages
-that need to be sent to the camera must wait until that camera comes online, and
-as soon as the camera does come online we begin to send it. This style of
-network further increases camera autonomy at the cost immediate communication
-ability. It allows for many interesting optimizations, such as reducing
-communication in low power situations and when only non-interesting data has
-been collected. Cameras can also be set to come alive on a timer to receive
-important control data from the network if needed to help manage the
-communication latency inherent with this type of design.
-
-\subsubsection{Network Transparency}
-
-One of our goals is to make it easy for researchers to augment the camera nodes
-with additional sensors without needing to modify the core network software. We
-would like these developers to not have to worry about the network software, and
-to have the opportunity to focus on their data collection and analysis systems.
-To implement a new mode of data collection, a developer only needs to establish
-a connection to the message server and send data. The network will recognize and
-handle new data types as it does native SlugCam data types. Eventually our video
-data collection system could be abstracted to generic binary data collection
-which would allow further opportunities to future developers on our platform
-without modifying the network itself.
-
-\subsubsection{Implementation}
+\subsection{Remote Server Software}
 
 % TODO a lot of opinion
 % TODO check 
@@ -175,7 +174,7 @@ define all interfaces and functions in documentation.  We are also planning on
 using prolific unit testing to ensure the reliability of or network code base in
 addition to end-to-end testing over the entire system.
 
-\subsubsection{Data Layer}
+\subsubsection{Data Storage}
 
 The data layer is responsible for maintaining the persistence of the system. It
 manages both textual data and the video data collected from the system. It also
@@ -338,7 +337,9 @@ clients in many different languages and frameworks. It also allows for the
 possibility of running custom automated monitoring and video processing
 applications without modifications to the core network.
 
-\subsection{Client Application}
+\subsection{End-User Device Software}
+
+%TODO connect End-User Device software
 
 Our client application is designed to be a user-friendly interface to the large
 amounts of fragmented data that this system has the ability to collect. We
@@ -360,15 +361,6 @@ adds location data to cameras records, and is able to then recall it at a later
 time.  This has the drawback that cameras must be renamed when moved to a new
 location, however, since camera name is easily configurable on the cameras, we
 did not see this as a major drawback.
-
-% Architecture Diagram
-% TODO fix me, put arrows pointing to everything referenced
-\begin{figure}[!t]
-\centering
-\includegraphics[width=2.5in]{dashboard_screenshot}
-\caption{Dashboard Screenshot}
-\label{dashboard_screenshot}
-\end{figure}
 
 We also built what we call the activity bar. The activity bar displays the
 activity over a period of time. This is an important aspect of our visual
