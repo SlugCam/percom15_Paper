@@ -1,0 +1,450 @@
+\section{Software System}
+\subsection{Overview}
+
+All of the software for the SlugCam system can be broken into three main areas:
+software that runs on the cameras themselves, the network software supporting
+the system, and client applications that present collected data to the end
+users. The focus of this paper is the network software and the client
+application that we designed.
+
+% Architecture Diagram
+% TODO should caption be centered?
+\begin{figure}[!t]
+\centering
+\includegraphics[width=2.5in]{software_organization}
+\caption{High-Level Architecture of the SlugCam Software System}
+\label{fig_netoverview}
+\end{figure}
+
+% Architecture Diagram
+% TODO fix me
+\begin{figure}[!t]
+\centering
+\includegraphics[width=2.5in]{software_organization}
+\caption{Data Flow Through the Network Software}
+\label{fig_netoverview}
+\end{figure}
+
+We chose to break apart network functionality into several main areas as shown
+in figure~\ref{fig_netoverview}. The message server is the main server
+responsible for communicating all textual data between the network and the
+cameras and the video server receives the video data from the cameras. The API
+server offers an HTTP interface to the network for end-user applications. All of
+these modules interact independently and communicate through the data storage
+layer. Figure~\ref{fig_networkflow} shows an example of data flow through the
+network system in the case of a video capture event.
+
+% Design goals
+
+One of the major goals for the network software design was to create a
+network that is easily extensible by researchers who may not have much
+experience working with network software. Our design decisions reflect this
+desire along with the need to work with the restrictions of our hardware and
+network choices.
+
+%\subsubsection{Modular Design}
+
+We decided early on that designing our network software in a modular way would
+afford us several benefits including ease of extensibility, ease of deployment,
+and the testability of our system. By clearly defining functional units and
+retaining a separation of duties between separate units of code we help ease the
+development process. Not only can development on separate modules occur in
+parallel, but developers can also work on a module without needing knowledge of
+how other modules are coded. This aspect becomes more important in our desire to
+create a system that is easily extensible by future researchers who may not have
+the time or desire to fully understand our code, but would like to add modules
+for their unique needs.
+
+One of the disadvantages of this design is that to maintain true separation of
+modules we lose the ability for modules to directly communicate.  Though for
+many applications this is not important, it does make it difficult for client
+applications to provide notification of updates without polling the data layer.
+Since we are not running into issues with this it is not something that we are
+looking to optimize currently, although several solutions are possible. One
+would to be allowing the data layer to send notifications to the API server.  In
+the current implementation this would mean that the servers would have to run in
+the same process. This requirement could be removed by creating a notification
+server that could broadcast updates to modules over a network connection. The
+ability to send email notifications or text messages is not as problematic, as
+this will be implemented at the data layer instead of existing across modules.
+
+% Insert Workflow diagram
+
+% \subsubsection{Opportunistic Network Design}
+
+Since various factors could inhibit communication to and from the camera nodes,
+we are required to design a type of delay-tolerant network.  To deal with these
+issues, we built all communication protocols in an opportunistic way. The video
+and message servers constantly wait for incoming connections from camera nodes
+and expect that those connections could be dropped at any time. Any messages
+that need to be sent to the camera must wait until that camera comes online, and
+as soon as the camera does come online we begin to send it. This style of
+network further increases camera autonomy at the cost immediate communication
+ability. It allows for many interesting optimizations, such as reducing
+communication in low power situations and when only non-interesting data has
+been collected. Cameras can also be set to come alive on a timer to receive
+important control data from the network if needed to help manage the
+communication latency inherent with this type of design.
+
+% \subsubsection{Network Transparency}
+
+One of our goals is to make it easy for researchers to augment the camera nodes
+with additional sensors without needing to modify the core network software. We
+would like these developers to not have to worry about the network software, and
+to have the opportunity to focus on their data collection and analysis systems.
+To implement a new mode of data collection, a developer only needs to establish
+a connection to the message server and send data. The network will recognize and
+handle new data types as it does native SlugCam data types. Eventually our video
+data collection system could be abstracted to generic binary data collection
+which would allow further opportunities to future developers on our platform
+without modifying the network itself.
+
+\subsection{SlugCam Node Software}
+
+One of the main benefits of running an embedded Linux distributions on our
+camera nodes any developer who has a moderate understanding of programming in C
+and using an environment similar to Linux can begin developing custom services
+for the camera nodes. It also means that we are able to develop our node
+software more efficiently and securely by using the well tested code bases of
+several open source projects for much of the lower level hardware interfacing.
+We also gain compatibility with many existing software libraries and hardware
+modules.
+
+The software on the camera node is required to fulfill three main
+responsibilities: controlling the camera, controlling wireless communication,
+and controlling the camera node itself. Each of these functions is implemented
+as a service on our system. We wrote much of the code to perform these functions
+as C libraries so that we are able to reuse it in multiple programs. This
+allows us to do things like develop the long-running processes along side
+shorter running processes that can be scripted more easily for testing purposes
+without duplicating code. The ability to write scripts to perform our various
+duty cycles has been invaluable in testing of our system, and allows for the
+rapid implementation of new ideas during experimentation.
+
+The service controlling the camera exists of camera interfacing code along with
+the computer vision algorithms. We use the comprehensive open source computer
+vision library OpenCV for assist in the construction of algorithms to analyze
+video. These computer vision algorithms are run against the live video stream
+from the Raspberry Pi camera module. We use the official library that is
+provided with the camera module for setting up the camera and filtering the
+stream.
+
+We decided that all of our communication handling should be handled in a single
+process due to the nature of the WiFly module that we are using for wireless
+communication. Since all communication must happen over a serial line and only
+one TCP connection can be open at a time, having one communication service
+allows us to better manage our communication needs.
+
+Since the node is also responsible for intelligently managing duty cycles, our
+system also requires a control service. At this time this service is simply
+responsible for starting the other two services, however as more of the duty
+cycles are implemented, selecting the duty cycle will become more complex. This
+service will be responsible for looking at battery level, solar power level,
+commands from the user, and possibly many other variables and determining an
+appropriate course of action. It will be where we can facilitate many of the
+interesting features such as immediately sending video with action in preset
+areas, allowing video recording on a timer, and taking still shots instead of
+video when battery levels are low.
+
+\subsection{Remote Server Software}
+
+% TODO a lot of opinion
+% TODO check 
+In our implementation of the network software we decided to use the Node.js
+JavaScript framework. We went with this choice for several reasons. Node.js
+offers many built in tools for writing network software while remaining more
+lightweight than many alternatives. Facilities for creating TCP and HTTP
+servers, network security, and many other essentials exist in the standard
+Node.js libraries. Using these facilities does not require much boilerplate code
+and is more succinct, and we believe more approachable, than in some
+alternatives. The developer community around Node.js is active and we were able
+to find packages for many useful development and network related tasks. In our
+experience many of the packages we found focused on solving a specific task
+which allowed us to bring in well-tested packages without adding a large amount
+of unnecessary code to the project.
+
+One of the drawbacks of JavaScript is that the dynamic type system removes the
+possibility of static type checking. This introduces a class of errors that can
+be detected by a compiler or other tools in statically typed languages such as C
+or Java. To help avoid many of the errors associated with the dynamic nature of
+JavaScript we use linting tools, such as JSHint, to warn us of common errors and
+patterns that frequently lead to error. We also use thorough documentation to
+aid in preventing many of these types of errors, and we are attempting to clearly
+define all interfaces and functions in documentation.  We are also planning on
+using prolific unit testing to ensure the reliability of or network code base in
+addition to end-to-end testing over the entire system.
+
+\subsubsection{Data Storage}
+
+The data layer is responsible for maintaining the persistence of the system. It
+manages both textual data and the video data collected from the system. It also
+plays an important role in connecting the individual modules of the system and
+allowing them to communicate while remaining functionally independent.
+
+The SlugCam network's data storage needs can be split into two major sections,
+textual data and video data. Both of these types of data storage have unique
+challenges and needs for a storage solution.
+
+In order to consolidate storage code in a meaningful way, the data layer code
+should exist as a Node.js module and should contain all the functions required
+to access the data layer. Though this is not currently true in implementation,
+it currently only manages the interface to the database for textual data and the
+file system commands are done elsewhere.
+
+\subsubsubsection{Textual Data}
+
+Textual data in our system takes the form of what we call messages. Messages
+encapsulate data communicated both to and from the cameras. Each message has
+several required metadata fields, a type, and a data section. It is the design
+of this message format that allows us to be so flexible in our stored data
+types. All of the native SlugCam messages have a type and a specified structure
+for the data section. The data layer is responsible for allowing us to query a
+specific message type and it is up to the client to decide how to interpret the
+data in a message. This goes along with the transparent network concept. It
+means that for a new data type to be introduced into the system modifications
+only need to be made to the camera node software and the client.
+
+%TODO check
+We decided to implement the textual data storage using an existing database
+system to take advantage of optimizations already made for storing this kind of
+structured data. The database system is further discussed in the methodology
+section.
+
+In our current implementation of the system we chose MongoDB\cite{mongo_home}
+for textual data storage. MongoDB offers several advantages in our situation.
+First of all, MongoDB stores records as documents, which are very similar to
+JSON objects.  This closely matches our desire to store our messages in a
+flexible way and the use of JSON as a communication format. Since MongoDB is
+designed around this style of data storage, and offers tools to easily and
+efficiently query data stored in this manner, it is a choice that has allowed us
+good performance and rapid development time. It makes it very easy to implement
+the flexibility we desire in our message format.
+
+\subsubsubsection{Video Data}
+
+The second portion of our storage layer is video storage. Video data and the
+textual data are very different. We often want to search through and query
+against large amounts of small messages whereas with video data each record
+contains a relatively large amount of data and requires special work to process
+and search though. In looking at methods we could use to store video data we
+determined that simply storing video data on the file system of the operating
+system would suit this project better than the alternatives, such as using a
+database system.
+
+%TODO weak
+Since all metadata pertaining to a videos is textual data, it is stored in the
+database. This means that there is a set of data in the textual data
+storage system containing all the metadata for a video. This set will contain a
+video ID, which along with the camera name can be used to recall the required
+video data from the file system. This means that we are able to retain the
+advantages of a database for querying and searching though video data.
+
+For our project, one of the advantages of storing the video data using
+the file system is that we retain the ability to use third party video
+processing tools without requiring a database wrapper to access the video. This
+helps us in experimenting with different video formats and means that we can 
+easily write scripts to process an entire library of collected video data.
+
+% TODO bring in extensibility
+
+\subsubsection{Message Server}
+
+The message server is a TCP server that is responsible for textual communication
+with the cameras. It transmits messages to and from camera nodes. This server
+operates in an opportunistic manner, as the rest of the network software does.
+This means that the server keeps a TCP port open ready to receive data and on
+the first message it receives it will begin sending outgoing messages until
+there are no more messages or the connection has been lost.
+
+In an attempt to find a standard data format that would be easy to use for
+future developers we wanted to use a standard data format instead of creating
+our own. We found that using JSON to structure our messages met most of our
+requirements. JSON is a standard, well defined, textual data format that is easy
+to parse and human readable. Libraries for working with JSON exist in many
+languages and it is not difficult to write libraries in languages that do not
+already have support. JSON also allows for nested structures which opens up many
+possibilities in structuring our message data fields.
+
+% references and discuss
+
+\subsubsection{Video Server}
+
+The video server is a TCP server that is responsible for receiving video data
+from the cameras. Unlike the message server, the video server only allows for
+communication from cameras, thus it is simpler in design than the message
+server.
+
+The protocol used to receive messages is a very simple binary transfer protocol.
+After a TCP connection is made the camera begins sending any pending videos.
+Multiple videos can be transferred per connection and like the
+message server a connection may be ended at any time without causing problems.
+
+Currently after a connection is made the camera first sends its name as a null
+terminated string, the camera then sends the video ID and video byte length as
+unsigned 32bit integers, then sends the video data itself.  The camera can then
+repeatedly send IDs, byte lengths, and video data for as many videos as it
+likes. This is shown in table~\ref{video_protocol}.
+
+It should also be noted that the video ID is a Unix timestamp and the duration
+of the video is calculated on the receiving server in order to find the video
+start and end times.  This reduces the amount of record keeping necessary on the
+node, but more importantly it provides us with a simple way to track start and
+end times for videos even if the node is unexpectedly powered off during video
+recording.
+
+\begin{table}[!t]
+% increase table row spacing, adjust to taste
+\renewcommand{\arraystretch}{1.3}
+\caption{Fields Required for the Video Protocol}
+\label{video_protocol}
+\centering
+
+\begin{tabular}{ | l || c | c | c | c | c | c |}
+    \hline  
+    Length & Variable & 32 bits & 32 bits & $Length_1$ & 32 bits & ...\\
+    \hline                       
+    Field & Camera Name & ID{1} & $Length_1$ & $Data_1$ & $ID_2$ & ...\\
+    \hline  
+\end{tabular}
+
+\end{table}
+
+
+We have designed several other protocols that work differently than our current
+protocol. We have looked at adding the ability to break the data into pieces and
+to send the pieces individually. The protocol we had originally designed worked
+this way however, due to time constraints, we decided to implement our current
+protocol first and to experiment with various algorithms to send fragmented
+videos later. This way we could have a performance analysis of the different
+algorithms and see how they worked in the system as a whole. One of the main
+advantages of our current protocol is its simplicity. We will need to balance
+the value of being able to power off mid-transfer without data loss and the code
+complexity that a new protocol could add. With our current setup we have the
+ability for the camera to make sure that a shutdown does not occur mid-way
+through a video transfer and to prevent video transmission in a low battery
+situation, so it is possible that other protocols may not offer enough benefit
+to outweigh the extra complications to the system that they would create.
+
+\subsubsection{API Server}
+
+The API server provides a clearly defined interface into this potentially
+complicated network. The API server is one of the points at which we were able
+to create a more transparent design for future developers. Our API server
+provides an HTTP interface to the network software that can be used by multiple
+client types. We chose to use an HTTP interface due to its ubiquity in modern
+computer systems. Future developers of the system have the ability to develop
+clients in many different languages and frameworks. It also allows for the
+possibility of running custom automated monitoring and video processing
+applications without modifications to the core network.
+
+\subsection{End-User Device Software}
+
+%TODO connect End-User Device software
+
+Our client application is designed to be a user-friendly interface to the large
+amounts of fragmented data that this system has the ability to collect. We
+wanted the client application to act as a showcase for the power of the system
+and to show many of its unique features. It is also important that the client
+application is well written and documented so that it can serve as a usage
+example for the API server.
+
+In order to present the cameras in an easy to understand way, we decided to
+allow for the mapping of cameras and the display of system data on maps of the
+monitored area (shown in figure~\ref{dashboard_screenshot}). Since this system
+is designed to work with a large number of cameras, having a list of cameras is
+not as intuitive as being able to see the location of cameras and recognize
+where activity is happening on a more global scale. The ability to implement
+mapping is an interesting application of our transparent network feature. The
+mapping data is implemented only at the client level, not requiring any input
+from the cameras or change to the networking software. Our client application
+adds location data to cameras records, and is able to then recall it at a later
+time.  This has the drawback that cameras must be renamed when moved to a new
+location, however, since camera name is easily configurable on the cameras, we
+did not see this as a major drawback.
+
+We also built what we call the activity bar. The activity bar displays the
+activity over a period of time. This is an important aspect of our visual
+presentation as it allows the user to correlate collected tags to the videos in
+which activity is happening in an intuitive way, but without hiding any
+information.This is also demonstrated in figure~\ref{dashboard_screenshot}.
+
+Another important feature mentioned earlier is the ability to set certain areas
+within view of a camera that will trigger alarms. When an alarm is triggered it
+could mean that a user is notified and the video recorded is instantly sent to
+the server, though we hope to make a system that allows users to define actions
+taken when alarms are triggered. The interface we have developed (shown in
+figure~\ref{alarm_selection} is intuitive and allows the user to visual select
+an area over recorded video, thus allowing an accurate selection given the
+current position of the camera.
+
+% Architecture Diagram
+% TODO fix me, put arrows pointing to everything referenced
+\begin{figure}[!t]
+\centering
+\includegraphics[width=2.5in]{alarm_selection}
+\caption{Selection of Alarm Areas}
+\label{alarm_selection}
+\end{figure}
+
+The application also includes traditional methods of filtering and querying the
+data collection, lists of videos can be filtered by different fields in a menu
+based system and paged through as shown in figure~\ref{trad_meth}. This allows
+for information to be viewed in a more targeted way, where the other views allow
+for broad overviews of collected data.
+
+% Architecture Diagram
+% TODO fix me, put arrows pointing to everything referenced
+\begin{figure}[!t]
+\centering
+\includegraphics[width=2.5in]{trad_meth}
+\caption{Selection of Alarm Areas}
+\label{trad_meth}
+\end{figure}
+
+We decided to build our client application as a single-page web application.
+This application runs within a web browser, but only requires a connection to
+the API server. This means that, though the application is built using web
+technologies, the application itself is fully contained in the client's web
+browser.
+
+One of the main reasons we chose this approach is its flexibility. By designing
+our application using standard web technologies we try to remain as platform
+agnostic as possible. We hope to build an application that can work well across
+operating systems and browsers.
+
+Since our application is a web application it can be hosted by a server included
+with the network software. This approach means that no end-user configuration is
+needed to run the application and that the application can be accessed from any
+web browser with access to the server. This could be a very clean and easy
+design for many uses. This is the method we are currently using in our testing,
+and we have included hooks in the script that starts the other servers that also
+starts up a static server hosting or client application.
+
+Since the our application runs entirely in the web browser, there is also the
+possibility of running the application from a client's local disk. Using
+frameworks such as node-webkit\cite{nw_home} or Atom Shell\cite{atom_home} we
+could also include features that are not possible in a normal web application
+such as the ability to save video files locally without prompting the user for
+location (could be useful if bulk saving many video files), or deeper desktop
+integration than web browsers allow for.
+
+Another benefit of using web technologies is mobile support. By sticking close
+to web standards we have been able to create a client application that is usable
+on tablets and mobile phones. In fact, we have been able to use the HTML5
+geolocation API to allow for setting the location of a camera based on GPS data
+from a smart phone. This means that when setting up a camera, the user can log
+into the web application, open the camera configuration, hit a button, and the
+camera location is automatically adjusted (manual configuration is also
+available).
+
+% Implementation %TODO check heading?
+We decided to use AngularJS\cite{angular_home} as our main framework in the
+development of this application. AngularJS is a JavaScript framework developed
+by Google. It aids in the creation of single-page client based web applications
+and allows us to build user interfaces in a more declarative way than in
+traditional web programming. This declarative approach to user interface design
+makes it much easier for us to experiment with different interface ideas
+rapidly. AngularJS is well documented and supported by Google, and has an active
+community of users outside of Google. Using the AngularJS framework has helped
+us create efficient, modular code that is easy to maintain.
+
